@@ -2,8 +2,11 @@ package com.tiltedhat.devspace.service;
 
 import com.tiltedhat.devspace.entity.User;
 import com.tiltedhat.devspace.repository.UserRepository;
-import lombok.Data;
-import org.springframework.security.core.parameters.P;
+import com.tiltedhat.devspace.security.JwtTokenProvider;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -11,10 +14,14 @@ import org.springframework.stereotype.Service;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     public String registerUser(RegisterRequest request){
@@ -36,5 +43,22 @@ public class AuthService {
 
         userRepository.save(user);
         return "New user registered successfully";
+    }
+
+    // 🔑 NEW LOGIN METHOD
+    public String loginUser(LoginRequest request) {
+        // This authentication manager automatically utilizes our CustomUserDetailsService under the hood
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsernameOrEmail(),
+                        request.getPassword()
+                )
+        );
+
+        // Save authentication state in Spring Security Context
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Generate and return the secure token string
+        return jwtTokenProvider.generateToken(authentication);
     }
 }
