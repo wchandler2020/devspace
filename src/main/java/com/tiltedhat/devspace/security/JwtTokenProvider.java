@@ -2,6 +2,7 @@ package com.tiltedhat.devspace.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -10,8 +11,15 @@ import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
-    private final String jwtSecret = "secretKeySecretKeySecretKeySecretKeySecretKeySecretKeySecretKeySecretKey";
-    private final long jwtExpirationInMs = 604800000; // 7 days in milliseconds
+
+    // Removed 'final' and removed the hardcoded string assignment.
+    // Spring will look for an environment variable named JWT_SECRET at runtime.
+    @Value("${JWT_SECRET}")
+    private String jwtSecret;
+
+    // Removed 'final'. Added a fallback default of 7 days if the environment variable isn't found.
+    @Value("${JWT_EXPIRATION}")
+    private long jwtExpirationInMs;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
