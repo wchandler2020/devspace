@@ -7,10 +7,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -22,5 +21,29 @@ public class PostController {
     public ResponseEntity<Post> createPost(@Valid @RequestBody PostRequest postRequest){
         Post savedPost = postService.createPost(postRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedPost);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Post>> getAllPosts(){
+        return ResponseEntity.ok(postService.getAllPosts());
+    }
+
+    // Fetch a single post by the its unique URL slugs
+    @GetMapping("/{slug}")
+    public ResponseEntity<Post> getPostBySlug(@PathVariable String slug){
+        return ResponseEntity.ok(postService.getPostBySlug(slug));
+    }
+
+    // Update an existing post by slug
+    @PutMapping("/{slug}")
+    public ResponseEntity<Post> updatePost(@PathVariable String slug, @RequestBody PostRequest request) {
+        return ResponseEntity.ok(postService.updatePost(slug, request));
+    }
+
+    // Delete a post by slug
+    @DeleteMapping("/{slug}")
+    public ResponseEntity<Void> deletePost(@PathVariable String slug) {
+        postService.deletePost(slug);
+        return ResponseEntity.noContent().build(); // Returns a 204 No Content on success
     }
 }

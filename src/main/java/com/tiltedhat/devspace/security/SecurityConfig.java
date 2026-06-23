@@ -37,17 +37,17 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
-
         http
-                // Disable CSRF because we are building a stateless REST API using JWTs
                 .csrf(csrf -> csrf.disable())
-                // Tell Spring Security not to create stateful sessions
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Define URL permissions
                 .authorizeHttpRequests(auth -> auth
-                        // Allow anyone to access the auth endpoints (register/login)
+                        // 1. Allow anyone to register or log in
                         .requestMatchers("/api/auth/**").permitAll()
-                        // All other endpoints require authentication
+
+                        // 2. Allow anyone to VIEW posts (GET requests only!)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/posts/**").permitAll()
+
+                        // 3. Any other request (like creating/updating/deleting posts) requires a token
                         .anyRequest().authenticated()
                 );
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

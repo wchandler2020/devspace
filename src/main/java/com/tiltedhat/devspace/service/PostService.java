@@ -41,11 +41,68 @@ public class PostService {
         return postRepository.save(post);
     }
 
+    @Transactional
+    public Post updatePost(String slug, PostRequest request){
+        // 1. Find the post
+        Post post = postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found with slug: " + slug));
+
+        // 2. Get the currently logged-in username
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 3. Strict Check: Does the logged-in user own this post?
+        if (!post.getAuthor().getUsername().equals(currentUsername)) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not authorized to update this post.");
+        }
+
+        // 4. Update the values
+        post.setTitle(request.getTitle());
+        post.setContent(request.getContent());
+
+        // Regenerate slug if title changed
+        String newSlug = generateSlug(request.getTitle());
+        if (!newSlug.equals(post.getSlug()) && postRepository.findBySlug(newSlug).isPresent()) {
+            newSlug += "-" + (System.currentTimeMillis() % 10000);
+        }
+        post.setSlug(newSlug);
+
+        return postRepository.save(post);
+    }
+
+    @Transactional
+    public void deletePost(String slug){
+        // 1. Find the post
+        Post post = postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found with slug: " + slug));
+
+        // 2. Get the currently logged-in username
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 3. Strict Check: Does the logged-in user own this post?
+        if (!post.getAuthor().getUsername().equals(currentUsername)) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not authorized to delete this post.");
+        }
+
+        // 4. Delete from database
+        postRepository.delete(post);
+    }
+
     private String generateSlug(String title) {
         return title.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-8\\s-]", "") // Remove special characters
                 .replaceAll("\\s+", "-")         // Replace spaces with hyphens
                 .replaceAll("-+", "-")           // Collapse consecutive hyphens
                 .replaceAll("^-|-$", "");        // Trim leading/trailing hyphens
+    }
+
+    // Fetch every single blog post in the database
+    public java.util.List<Post> getAllPosts() {
+        return postRepository.findAll();
+    }
+
+    // Fetch a single blog post using its unique text URL slug
+    public Post getPostBySlug(String slug) {
+        return postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Blog post not found with slug: " + slug));
     }
 }
