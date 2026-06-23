@@ -17,9 +17,18 @@ public class JwtTokenProvider {
     @Value("${JWT_SECRET}")
     private String jwtSecret;
 
-    // Removed 'final'. Added a fallback default of 7 days if the environment variable isn't found.
-    @Value("${JWT_EXPIRATION}")
+    // By adding the :604800000 fallback, it ensures that if the environment
+    // variable is missing, it sets a real 7-day expiration window instead of 0.
+    @Value("${JWT_EXPIRATION:604800000}")
     private long jwtExpirationInMs;
+
+    // ⬇️ ADD THIS TEMPORARY DEBUG METHOD
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        System.out.println("====== JWT SECRET CHECK ======");
+        System.out.println("Loaded Secret: " + jwtSecret);
+        System.out.println("==============================");
+    }
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
