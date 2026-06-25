@@ -23,15 +23,26 @@ public class PostController {
         return ResponseEntity.ok(PostResponse.fromEntity(postService.createPost(request)));
     }
 
+    // Update this endpoint in your PostController.java
     @GetMapping
-    public ResponseEntity<List<Post>> getAllPosts(){
-        return ResponseEntity.ok(postService.getAllPosts());
+    public ResponseEntity<org.springframework.data.domain.Page<PostResponse>> getAllPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String tag
+    ) {
+        // 1. Pass page/size query parameters into your service class
+        org.springframework.data.domain.Page<Post> postPage = postService.getAllPosts(page, size, tag);
+
+        // 2. Map the inner stream of entities over to our clean PostResponse DTO record
+        org.springframework.data.domain.Page<PostResponse> responses = postPage.map(PostResponse::fromEntity);
+
+        return ResponseEntity.ok(responses);
     }
 
     // Fetch a single post by the its unique URL slugs
     @GetMapping("/{slug}")
-    public ResponseEntity<Post> getPostBySlug(@PathVariable String slug){
-        return ResponseEntity.ok(postService.getPostBySlug(slug));
+    public ResponseEntity<PostResponse> getPostBySlug(@PathVariable String slug){
+        return ResponseEntity.ok(PostResponse.fromEntity(postService.getPostBySlug(slug)));
     }
 
     // Update an existing post by slug

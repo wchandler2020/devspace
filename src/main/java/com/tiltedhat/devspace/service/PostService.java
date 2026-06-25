@@ -3,8 +3,13 @@ package com.tiltedhat.devspace.service;
 import com.tiltedhat.devspace.entity.Post;
 import com.tiltedhat.devspace.entity.User;
 import com.tiltedhat.devspace.repository.PostRepository;
+import com.tiltedhat.devspace.repository.TagRepository;
 import com.tiltedhat.devspace.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -17,6 +22,7 @@ import java.util.Locale;
 public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final TagRepository tagRepository;
 
     @Transactional
     public Post createPost(PostRequest request){
@@ -38,6 +44,8 @@ public class PostService {
         post.setSlug(slug);
         post.setAuthor(author);
 
+        post.setTags(processTags(request.getTags()));
+
         return postRepository.save(post);
     }
 
@@ -58,6 +66,7 @@ public class PostService {
         // 4. Update the values
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
+        post.setTags(processTags(request.getTags()));
 
         // Regenerate slug if title changed
         String newSlug = generateSlug(request.getTitle());
@@ -96,8 +105,17 @@ public class PostService {
     }
 
     // Fetch every single blog post in the database
-    public java.util.List<Post> getAllPosts() {
-        return postRepository.findAll();
+
+    public Page<Post> getAllPosts(int page, int size, String tagSlug) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        // If a tag parameter is provided, filter by it!
+        if (tagSlug != null && !tagSlug.isBlank()) {
+            return postRepository.findByTags_Slug(tagSlug.trim().toLowerCase(), pageable);
+        }
+
+        // Otherwise, default to returning everything
+        return postRepository.findAll(pageable);
     }
 
     // Fetch a single blog post using its unique text URL slug
@@ -105,4 +123,30 @@ public class PostService {
         return postRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Blog post not found with slug: " + slug));
     }
+
+    private java.util.Set<com.tiltedhat.devspace.entity.Tag> processTags(java.util.Set<String> tagNames) {
+        java.util.Set<com.tiltedhat.devspace.entity.Tag> managedTags = new java.util.HashSet<>();
+        if (tagNames == null || tagNames.isEmpty()) {
+            return managedTags;
+        }
+
+        for (String name : tagNames) {
+            String cleanName = name.trim().toLowerCase();
+            if (cleanName.isEmpty()) continue;
+
+            com.tiltedhat.devspace.entity.Tag tag = tagRepository.findByName(cleanName)
+                    .orElseGet(() -> {
+                        com.tiltedhat.devspace.entity.Tag newTag = new com.tiltedhat.devspace.entity.Tag();
+                        newTag.setName(cleanName);
+
+                        // ⬇️ Fix: Set the slug right here using your helper method!
+                        newTag.setSlug(generateSlug(cleanName));
+
+                        return tagRepository.save(newTag);
+                    });
+            managedTags.add(tag);
+        }
+        return managedTags;
+    }
+
 }

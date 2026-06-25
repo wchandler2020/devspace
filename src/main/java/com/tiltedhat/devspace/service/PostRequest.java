@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 @Data
 public class PostRequest {
     @NotBlank(message = "Title cannot be blank")
@@ -13,4 +15,6 @@ public class PostRequest {
 
     @NotBlank(message = "Content cannot be blank")
     private String content;
+
+    private Set<String> tags;
 }
