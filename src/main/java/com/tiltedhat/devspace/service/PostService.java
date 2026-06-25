@@ -2,6 +2,7 @@ package com.tiltedhat.devspace.service;
 
 import com.tiltedhat.devspace.entity.Post;
 import com.tiltedhat.devspace.entity.User;
+import com.tiltedhat.devspace.repository.CommentRepository;
 import com.tiltedhat.devspace.repository.PostRepository;
 import com.tiltedhat.devspace.repository.TagRepository;
 import com.tiltedhat.devspace.repository.UserRepository;
@@ -23,6 +24,8 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+
+    private final CommentRepository commentRepository;
 
     @Transactional
     public Post createPost(PostRequest request){
@@ -147,6 +150,40 @@ public class PostService {
             managedTags.add(tag);
         }
         return managedTags;
+    }
+
+    // Inside com.tiltedhat.devspace.service.PostService
+
+    @Transactional
+    public void deleteComment(Long commentId) {
+        // 1. Find the comment
+        com.tiltedhat.devspace.entity.Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found with ID: " + commentId));
+
+        // 2. Get the currently authenticated username
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 3. Authorization Check
+        String commentAuthor = comment.getAuthor().getUsername();
+        String postOwner = comment.getPost().getAuthor().getUsername();
+
+        boolean isCommentAuthor = commentAuthor.equals(currentUsername);
+        boolean isPostOwner = postOwner.equals(currentUsername);
+
+        System.out.println("=== DELETION DEBUG ===");
+        System.out.println("Logged-in User: [" + currentUsername + "]");
+        System.out.println("Comment Author: [" + commentAuthor + "]");
+        System.out.println("Post Owner: [" + postOwner + "]");
+        System.out.println("======================");
+
+        if (!isCommentAuthor && !isPostOwner) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You are not authorized to delete this comment."
+            );
+        }
+
+        // 4. Delete the comment
+        commentRepository.delete(comment);
     }
 
 }
