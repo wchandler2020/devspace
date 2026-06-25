@@ -1,5 +1,6 @@
 package com.tiltedhat.devspace.controller;
 
+import com.tiltedhat.devspace.dto.PostResponse;
 import com.tiltedhat.devspace.entity.Post;
 import com.tiltedhat.devspace.service.PostRequest;
 import com.tiltedhat.devspace.service.PostService;
@@ -18,9 +19,8 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    public ResponseEntity<Post> createPost(@Valid @RequestBody PostRequest postRequest){
-        Post savedPost = postService.createPost(postRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedPost);
+    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest request){
+        return ResponseEntity.ok(PostResponse.fromEntity(postService.createPost(request)));
     }
 
     @GetMapping
@@ -36,8 +36,8 @@ public class PostController {
 
     // Update an existing post by slug
     @PutMapping("/{slug}")
-    public ResponseEntity<Post> updatePost(@PathVariable String slug, @RequestBody PostRequest request) {
-        return ResponseEntity.ok(postService.updatePost(slug, request));
+    public ResponseEntity<PostResponse> updatePost(@PathVariable String slug,@Valid @RequestBody PostRequest request) {
+        return ResponseEntity.ok(PostResponse.fromEntity(postService.updatePost(slug, request)));
     }
 
     // Delete a post by slug
