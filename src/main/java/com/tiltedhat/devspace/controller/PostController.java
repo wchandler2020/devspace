@@ -55,4 +55,21 @@ public class PostController {
         postService.deletePost(slug);
         return ResponseEntity.noContent().build(); // Returns a 204 No Content on success
     }
+
+    @PostMapping("/{slug}/like")
+    public ResponseEntity<Void> likePost(@PathVariable String slug) {
+        postService.likePost(slug);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{slug}/like")
+    public ResponseEntity<Void> unlikePost(@PathVariable String slug) {
+        postService.unlikePost(slug);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{slug}/likes")
+    public ResponseEntity<Long> getLikeCount(@PathVariable String slug) {
+        return ResponseEntity.ok(postService.getLikeCount(slug));
+    }
 }

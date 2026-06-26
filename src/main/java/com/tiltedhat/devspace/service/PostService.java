@@ -1,12 +1,10 @@
 package com.tiltedhat.devspace.service;
 
 import com.tiltedhat.devspace.entity.Post;
+import com.tiltedhat.devspace.entity.PostLike;
 import com.tiltedhat.devspace.entity.PostStatus;
 import com.tiltedhat.devspace.entity.User;
-import com.tiltedhat.devspace.repository.CommentRepository;
-import com.tiltedhat.devspace.repository.PostRepository;
-import com.tiltedhat.devspace.repository.TagRepository;
-import com.tiltedhat.devspace.repository.UserRepository;
+import com.tiltedhat.devspace.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,8 +24,8 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
-
     private final CommentRepository commentRepository;
+    private final PostLikeRepository postLikeRepository;
 
     @Transactional
     public Post createPost(PostRequest request){
@@ -111,6 +109,43 @@ public class PostService {
 
         // 4. Delete from database
         postRepository.delete(post);
+    }
+
+    @Transactional
+    public void likePost(String slug) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Post post = postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found with slug: " + slug));
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        if (postLikeRepository.existsByPostSlugAndUserUsername(slug, username)) {
+            throw new RuntimeException("You have already liked this post.");
+        }
+
+        PostLike like = new PostLike();
+        like.getPost(); // set via setters
+        like.setPost(post);
+        like.setUser(user);
+
+        postLikeRepository.save(like);
+    }
+
+    @Transactional
+    public void unlikePost(String slug) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!postLikeRepository.existsByPostSlugAndUserUsername(slug, username)) {
+            throw new RuntimeException("You have not liked this post.");
+        }
+
+        postLikeRepository.deleteByPostSlugAndUserUsername(slug, username);
+    }
+
+    public long getLikeCount(String slug) {
+        return postLikeRepository.countByPostSlug(slug);
     }
 
     private String generateSlug(String title) {

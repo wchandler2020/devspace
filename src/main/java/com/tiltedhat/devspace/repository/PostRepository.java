@@ -41,4 +41,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = {"author", "comments", "tags"})
     @Query("SELECT p FROM Post p JOIN p.tags t WHERE (p.status = 'PUBLISHED' OR (p.status = 'DRAFT' AND p.author.username = :username)) AND t.slug = :tagSlug")
     Page<Post> findFeedForUserAndTag(String username, String tagSlug, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"author", "tags", "comments"})
+    Page<Post> findByAuthorUsernameAndStatus(String username, PostStatus status, Pageable pageable);
 }

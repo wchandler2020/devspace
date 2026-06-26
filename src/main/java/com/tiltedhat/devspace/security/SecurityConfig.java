@@ -47,6 +47,8 @@ public class SecurityConfig {
                         // 2. Allow anyone to VIEW posts (GET requests only!)
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/posts/**").permitAll()
 
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/users/**").permitAll()
+
                         // 3. Any other request (like creating/updating/deleting posts) requires a token
                         .anyRequest().authenticated()
                 );
