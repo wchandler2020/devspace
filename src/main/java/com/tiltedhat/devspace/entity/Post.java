@@ -53,4 +53,8 @@ public class Post {
     )
     private java.util.Set<Tag> tags = new java.util.HashSet<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PostStatus status = PostStatus.DRAFT;
+
 }

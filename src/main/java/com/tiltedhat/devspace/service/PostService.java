@@ -1,6 +1,7 @@
 package com.tiltedhat.devspace.service;
 
 import com.tiltedhat.devspace.entity.Post;
+import com.tiltedhat.devspace.entity.PostStatus;
 import com.tiltedhat.devspace.entity.User;
 import com.tiltedhat.devspace.repository.CommentRepository;
 import com.tiltedhat.devspace.repository.PostRepository;
@@ -15,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.tiltedhat.devspace.dto.PostRequest;
 
 import java.util.Locale;
 
@@ -34,20 +36,32 @@ public class PostService {
         User author = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new UsernameNotFoundException("Authenticated User not found."));
 
-        String slug = generateSlug(request.getTitle());
+        String slug = generateSlug(request.title());
         
         if(postRepository.findBySlug(slug).isPresent()){
             slug += "_"+System.currentTimeMillis() % 10000;
         }
-        
+
         Post post = new Post();
         
-        post.setTitle(request.getTitle());
-        post.setContent(request.getContent());
+        post.setTitle(request.title());
+        post.setContent(request.content());
         post.setSlug(slug);
         post.setAuthor(author);
 
-        post.setTags(processTags(request.getTags()));
+        post.setTags(processTags(request.tags()));
+
+        if (request.status() != null) {
+            try {
+                // Convert the raw JSON string ("DRAFT" or "PUBLISHED") into the official PostStatus Enum
+                post.setStatus(com.tiltedhat.devspace.entity.PostStatus.valueOf(request.status().trim().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                // Fallback safety if someone types a typo string like "DFRFT" instead of "DRAFT"
+                post.setStatus(PostStatus.DRAFT);
+            }
+        } else {
+            post.setStatus(PostStatus.DRAFT);
+        }
 
         return postRepository.save(post);
     }
@@ -67,12 +81,12 @@ public class PostService {
         }
 
         // 4. Update the values
-        post.setTitle(request.getTitle());
-        post.setContent(request.getContent());
-        post.setTags(processTags(request.getTags()));
+        post.setTitle(request.title());
+        post.setContent(request.content());
+        post.setTags(processTags(request.tags()));
 
         // Regenerate slug if title changed
-        String newSlug = generateSlug(request.getTitle());
+        String newSlug = generateSlug(request.title());
         if (!newSlug.equals(post.getSlug()) && postRepository.findBySlug(newSlug).isPresent()) {
             newSlug += "-" + (System.currentTimeMillis() % 10000);
         }
@@ -109,16 +123,31 @@ public class PostService {
 
     // Fetch every single blog post in the database
 
+    // Replace your old getAllPosts method with this one:
     public Page<Post> getAllPosts(int page, int size, String tagSlug) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        // If a tag parameter is provided, filter by it!
-        if (tagSlug != null && !tagSlug.isBlank()) {
-            return postRepository.findByTags_Slug(tagSlug.trim().toLowerCase(), pageable);
-        }
+        // 1. Check if a user is securely logged in or browsing anonymously
+        org.springframework.security.core.Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAuthenticated = auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser");
 
-        // Otherwise, default to returning everything
-        return postRepository.findAll(pageable);
+        // 2. Logic for Authenticated Logged-In Users
+        if (isAuthenticated) {
+            String currentUsername = auth.getName();
+            // If they want a specific tag, fetch all published items + their own drafts matching that tag
+            if (tagSlug != null && !tagSlug.isBlank()) {
+                return postRepository.findFeedForUserAndTag(currentUsername, tagSlug.trim().toLowerCase(), pageable);
+            }
+            // Otherwise, fetch their personalized homepage feed
+            return postRepository.findFeedForUser(currentUsername, pageable);
+
+        } else {
+            // 3. Logic for Anonymous Public Visitors (Strictly see PUBLISHED content only)
+            if (tagSlug != null && !tagSlug.isBlank()) {
+                return postRepository.findByStatusAndTags_Slug(PostStatus.PUBLISHED, tagSlug.trim().toLowerCase(), pageable);
+            }
+            return postRepository.findByStatus(PostStatus.PUBLISHED, pageable);
+        }
     }
 
     // Fetch a single blog post using its unique text URL slug
@@ -185,5 +214,7 @@ public class PostService {
         // 4. Delete the comment
         commentRepository.delete(comment);
     }
+
+
 
 }

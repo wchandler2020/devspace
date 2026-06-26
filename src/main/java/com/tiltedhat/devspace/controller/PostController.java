@@ -1,16 +1,14 @@
 package com.tiltedhat.devspace.controller;
 
+import com.tiltedhat.devspace.dto.PostRequest;
 import com.tiltedhat.devspace.dto.PostResponse;
 import com.tiltedhat.devspace.entity.Post;
-import com.tiltedhat.devspace.service.PostRequest;
+
 import com.tiltedhat.devspace.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/posts")
