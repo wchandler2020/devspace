@@ -144,6 +144,75 @@ public class PostService {
         postLikeRepository.deleteByPostSlugAndUserUsername(slug, username);
     }
 
+    @Transactional
+    public Post publishPost(String slug) {
+        Post post = postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found with slug: " + slug));
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!post.getAuthor().getUsername().equals(currentUsername)) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not authorized to publish this post.");
+        }
+
+        post.setStatus(PostStatus.PUBLISHED);
+        postRepository.save(post);
+
+        // Reload with all associations eagerly fetched
+        return postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found after save."));
+    }
+
+    @Transactional
+    public Post unpublishPost(String slug) {
+        Post post = postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found with slug: " + slug));
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!post.getAuthor().getUsername().equals(currentUsername)) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not authorized to unpublish this post.");
+        }
+
+        post.setStatus(PostStatus.DRAFT);
+        postRepository.save(post);
+
+        // Reload with all associations eagerly fetched
+        return postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found after save."));
+    }
+    @Transactional
+    public void deleteComment(Long commentId) {
+        // 1. Find the comment
+        com.tiltedhat.devspace.entity.Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found with ID: " + commentId));
+
+        // 2. Get the currently authenticated username
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 3. Authorization Check
+        String commentAuthor = comment.getAuthor().getUsername();
+        String postOwner = comment.getPost().getAuthor().getUsername();
+
+        boolean isCommentAuthor = commentAuthor.equals(currentUsername);
+        boolean isPostOwner = postOwner.equals(currentUsername);
+
+        System.out.println("=== DELETION DEBUG ===");
+        System.out.println("Logged-in User: [" + currentUsername + "]");
+        System.out.println("Comment Author: [" + commentAuthor + "]");
+        System.out.println("Post Owner: [" + postOwner + "]");
+        System.out.println("======================");
+
+        if (!isCommentAuthor && !isPostOwner) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You are not authorized to delete this comment."
+            );
+        }
+
+        // 4. Delete the comment
+        commentRepository.delete(comment);
+    }
+
     public long getLikeCount(String slug) {
         return postLikeRepository.countByPostSlug(slug);
     }
@@ -216,39 +285,7 @@ public class PostService {
         return managedTags;
     }
 
-    // Inside com.tiltedhat.devspace.service.PostService
 
-    @Transactional
-    public void deleteComment(Long commentId) {
-        // 1. Find the comment
-        com.tiltedhat.devspace.entity.Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found with ID: " + commentId));
-
-        // 2. Get the currently authenticated username
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // 3. Authorization Check
-        String commentAuthor = comment.getAuthor().getUsername();
-        String postOwner = comment.getPost().getAuthor().getUsername();
-
-        boolean isCommentAuthor = commentAuthor.equals(currentUsername);
-        boolean isPostOwner = postOwner.equals(currentUsername);
-
-        System.out.println("=== DELETION DEBUG ===");
-        System.out.println("Logged-in User: [" + currentUsername + "]");
-        System.out.println("Comment Author: [" + commentAuthor + "]");
-        System.out.println("Post Owner: [" + postOwner + "]");
-        System.out.println("======================");
-
-        if (!isCommentAuthor && !isPostOwner) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "You are not authorized to delete this comment."
-            );
-        }
-
-        // 4. Delete the comment
-        commentRepository.delete(comment);
-    }
 
 
 

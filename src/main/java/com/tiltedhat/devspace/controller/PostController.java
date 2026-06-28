@@ -72,4 +72,14 @@ public class PostController {
     public ResponseEntity<Long> getLikeCount(@PathVariable String slug) {
         return ResponseEntity.ok(postService.getLikeCount(slug));
     }
+
+    @PatchMapping("/{slug}/publish")
+    public ResponseEntity<PostResponse> publishPost(@PathVariable String slug) {
+        return ResponseEntity.ok(PostResponse.fromEntity(postService.publishPost(slug)));
+    }
+
+    @PatchMapping("/{slug}/unpublish")
+    public ResponseEntity<PostResponse> unpublishPost(@PathVariable String slug) {
+        return ResponseEntity.ok(PostResponse.fromEntity(postService.unpublishPost(slug)));
+    }
 }

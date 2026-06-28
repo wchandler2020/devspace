@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
-    @EntityGraph(attributePaths = {"author", "tags"})
+    @EntityGraph(attributePaths = {"author", "tags", "comments", "comments.author"})
     Optional<Post> findBySlug(String slug);
 
     @EntityGraph(attributePaths = {"author", "comments", "tags"})
