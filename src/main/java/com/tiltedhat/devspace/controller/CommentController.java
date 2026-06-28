@@ -6,6 +6,7 @@ import com.tiltedhat.devspace.entity.Comment;
 import com.tiltedhat.devspace.service.CommentService;
 import com.tiltedhat.devspace.service.PostService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,10 +28,12 @@ public class CommentController {
 //    }
 
     @GetMapping
-    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable String slug) {
-        List<CommentResponse> comments = commentService.getCommentsForPost(slug).stream()
-                .map(CommentResponse::fromEntity)
-                .toList();
+    public ResponseEntity<Page<CommentResponse>> getComments(
+            @PathVariable String slug,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<CommentResponse> comments = commentService.getCommentsForPost(slug, page, size)
+                .map(CommentResponse::fromEntity);
         return ResponseEntity.ok(comments);
     }
 

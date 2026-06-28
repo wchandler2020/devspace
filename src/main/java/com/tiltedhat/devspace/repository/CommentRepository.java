@@ -1,6 +1,8 @@
 package com.tiltedhat.devspace.repository;
 
 import com.tiltedhat.devspace.entity.Comment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,4 +20,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     // This fetches the comment, its author, the post, and the post's author all at once
     @EntityGraph(attributePaths = {"author", "post", "post.author"})
     Optional<Comment> findById(Long id);
+
+    @EntityGraph(attributePaths = {"author"})
+    Page<Comment> findByPostSlugOrderByCreatedAtDesc(String slug, Pageable pageable);
 }
