@@ -13,6 +13,7 @@ public record PostResponse(
         UserResponse author,
         List<CommentResponse> comments,
         List<String> tags,
+        Long viewCount,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -24,8 +25,8 @@ public record PostResponse(
                 post.getContent(),
                 UserResponse.fromEntity(post.getAuthor()),
                 post.getComments() != null ? post.getComments().stream().map(CommentResponse::fromEntity).toList() : List.of(),
-                // Map the Tag entities to a safe list of strings right here
                 post.getTags() != null ? post.getTags().stream().map(Tag::getName).toList() : List.of(),
+                post.getViewCount(),
                 post.getCreatedAt(),
                 post.getUpdatedAt()
         );

@@ -74,6 +74,16 @@ public class PostController {
         return ResponseEntity.ok(postService.getLikeCount(slug));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<PostResponse>> searchPosts(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<PostResponse> results = postService.searchPosts(q, page, size)
+                .map(PostResponse::fromEntity);
+        return ResponseEntity.ok(results);
+    }
+
     @PatchMapping("/{slug}/publish")
     public ResponseEntity<PostResponse> publishPost(@PathVariable String slug) {
         return ResponseEntity.ok(PostResponse.fromEntity(postService.publishPost(slug)));

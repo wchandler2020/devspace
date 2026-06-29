@@ -47,4 +47,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @EntityGraph(attributePaths = {"author", "tags", "comments", "comments.author"})
     Page<Post> findByAuthorUsername(String username, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"author", "tags", "comments", "comments.author"})
+    @Query("SELECT p FROM Post p WHERE p.status = 'PUBLISHED' AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<Post> searchPosts(String query, Pageable pageable);
 }

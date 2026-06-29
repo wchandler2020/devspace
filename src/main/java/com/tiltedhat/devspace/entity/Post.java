@@ -57,4 +57,8 @@ public class Post {
     @Column(nullable = false, length = 20)
     private PostStatus status = PostStatus.DRAFT;
 
+    @Column(name = "view_count", nullable = false)
+    private Long viewCount = 0L;
+
+
 }

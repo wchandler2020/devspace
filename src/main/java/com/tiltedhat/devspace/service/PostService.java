@@ -255,9 +255,13 @@ public class PostService {
     }
 
     // Fetch a single blog post using its unique text URL slug
+    @Transactional
     public Post getPostBySlug(String slug) {
-        return postRepository.findBySlug(slug)
+        Post post = postRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Blog post not found with slug: " + slug));
+
+        post.setViewCount(post.getViewCount() + 1);
+        return postRepository.save(post);
     }
 
     private java.util.Set<com.tiltedhat.devspace.entity.Tag> processTags(java.util.Set<String> tagNames) {
@@ -291,4 +295,12 @@ public class PostService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return postRepository.findByAuthorUsername(currentUsername, pageable);
     }
+
+    @Transactional(readOnly = true)
+    public Page<Post> searchPosts(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return postRepository.searchPosts(query.trim().toLowerCase(), pageable);
+    }
+
+
 }
