@@ -50,4 +50,12 @@ public class CommentController {
         postService.deleteComment(id);
         return ResponseEntity.noContent().build(); // Returns a clean 204 No Content response upon success
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CommentResponse> updateComment(
+            @PathVariable Long id,
+            @Valid @RequestBody CommentRequest request) {
+        Comment comment = commentService.updateComment(id, request);
+        return ResponseEntity.ok(CommentResponse.fromEntity(comment));
+    }
 }

@@ -285,8 +285,10 @@ public class PostService {
         return managedTags;
     }
 
-
-
-
-
+    @Transactional(readOnly = true)
+    public Page<Post> getMyPosts(int page, int size) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return postRepository.findByAuthorUsername(currentUsername, pageable);
+    }
 }

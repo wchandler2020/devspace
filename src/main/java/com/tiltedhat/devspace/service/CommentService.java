@@ -52,4 +52,20 @@ public class CommentService {
 
         return commentRepository.save(comment);
     }
+
+    @Transactional
+    public Comment updateComment(Long commentId, CommentRequest request) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found with ID: " + commentId));
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!comment.getAuthor().getUsername().equals(currentUsername)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You are not authorized to edit this comment.");
+        }
+
+        comment.setContent(request.content());
+        return commentRepository.save(comment);
+    }
 }

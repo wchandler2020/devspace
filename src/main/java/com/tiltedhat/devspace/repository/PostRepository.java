@@ -44,4 +44,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @EntityGraph(attributePaths = {"author", "tags", "comments"})
     Page<Post> findByAuthorUsernameAndStatus(String username, PostStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"author", "tags", "comments", "comments.author"})
+    Page<Post> findByAuthorUsername(String username, Pageable pageable);
 }

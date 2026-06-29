@@ -7,6 +7,7 @@ import com.tiltedhat.devspace.entity.Post;
 import com.tiltedhat.devspace.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -81,5 +82,14 @@ public class PostController {
     @PatchMapping("/{slug}/unpublish")
     public ResponseEntity<PostResponse> unpublishPost(@PathVariable String slug) {
         return ResponseEntity.ok(PostResponse.fromEntity(postService.unpublishPost(slug)));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Page<PostResponse>> getMyPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<PostResponse> posts = postService.getMyPosts(page, size)
+                .map(PostResponse::fromEntity);
+        return ResponseEntity.ok(posts);
     }
 }
